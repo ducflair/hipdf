@@ -36,7 +36,7 @@
 
 pub mod ocg;
 pub mod hatching;
-
+pub mod embed_pdf;
 
 
 
