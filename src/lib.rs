@@ -13,7 +13,7 @@
 //! ## Example
 //!
 //! ```rust
-//! use hipdf::{OCGManager, Layer, LayerContentBuilder, LayerOperations as Ops};
+//! use hipdf::ocg::{OCGManager, Layer, LayerContentBuilder, LayerOperations as Ops};
 //! use lopdf::{Document, Object};
 //!
 //! // Create a new PDF with layers
@@ -32,15 +32,10 @@
 //!
 //! - [`ocg`] - Optional Content Groups (layers) functionality
 //! - [`layer`] - Layer management and utilities
-//! - [`content`] - Content building for layered PDFs
-
-
+//! - [`hatching`] - Hatching and pattern support for PDF documents
 
 pub mod ocg;
-
-// Re-export commonly used types for convenience
-pub use ocg::{OCGManager, Layer, LayerContentBuilder, LayerOperations, OCGConfig};
-
+pub mod hatching;
 
 
 

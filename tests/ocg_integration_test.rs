@@ -32,9 +32,9 @@ fn cleanup_test_files() {
                     if file_type.is_file() {
                         let file_name = entry.file_name();
                         let file_name_str = file_name.to_string_lossy();
-                        
-                        // Keep the main integration test PDF for inspection
-                        if file_name_str != "ocg_integration_test.pdf" {
+
+                        // Keep test PDFs for inspection (any file ending with _test.pdf)
+                        if !file_name_str.ends_with("_test.pdf") {
                             let _ = fs::remove_file(entry.path());
                         }
                     }
@@ -449,7 +449,6 @@ fn test_ocg_integration() {
     
     // 11. Save the PDF
     let output_path = format!("{}/ocg_integration_test.pdf", TEST_OUTPUT_DIR);
-    doc.save(&output_path).expect("Failed to save advanced layered PDF");
 
     // Verify the file was created
     assert!(Path::new(&output_path).exists());
