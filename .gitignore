@@ -1,0 +1,17 @@
+# Rust artifacts
+target/
+Cargo.lock
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# IDE
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
