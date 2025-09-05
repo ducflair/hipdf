@@ -2,9 +2,6 @@
   "private": true,
   "version": "0.0.0-development",
   "license": "MIT",
-  "repository": {
-    "url": "https://github.com/duc/hipdf"
-  },
   "scripts": {
     "test": "cargo test",
     "build": "cargo build"
