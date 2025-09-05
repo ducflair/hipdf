@@ -10,8 +10,8 @@
 //! - Full PDF generation with OCG support
 //! - Performance and edge cases
 
-use hipdf::ocg::{OCGManager, Layer, LayerContentBuilder, LayerOperations as Ops, OCGConfig};
-use lopdf::{dictionary, Document, Object, content::Content, Stream};
+use hipdf::ocg::{Layer, LayerContentBuilder, LayerOperations as Ops, OCGConfig, OCGManager};
+use lopdf::{content::Content, dictionary, Document, Object, Stream};
 use std::fs;
 use std::path::Path;
 
@@ -66,7 +66,8 @@ fn test_layer_creation() {
 fn test_layer_content_builder() {
     let mut builder = LayerContentBuilder::new();
 
-    builder.begin_layer("L0")
+    builder
+        .begin_layer("L0")
         .add_operation(Ops::rectangle(0.0, 0.0, 100.0, 100.0))
         .end_layer();
 
@@ -83,15 +84,24 @@ fn test_layer_operations() {
     let stroke_op = Ops::stroke();
 
     // Verify operation types - Operation has a public method to get the operator
-    assert_eq!(format!("{:?}", rect_op), format!("{:?}", Ops::rectangle(10.0, 20.0, 100.0, 200.0)));
+    assert_eq!(
+        format!("{:?}", rect_op),
+        format!("{:?}", Ops::rectangle(10.0, 20.0, 100.0, 200.0))
+    );
     assert_eq!(format!("{:?}", fill_op), format!("{:?}", Ops::fill()));
     assert_eq!(format!("{:?}", stroke_op), format!("{:?}", Ops::stroke()));
 
     let color_op = Ops::set_fill_color_rgb(1.0, 0.5, 0.0);
-    assert_eq!(format!("{:?}", color_op), format!("{:?}", Ops::set_fill_color_rgb(1.0, 0.5, 0.0)));
+    assert_eq!(
+        format!("{:?}", color_op),
+        format!("{:?}", Ops::set_fill_color_rgb(1.0, 0.5, 0.0))
+    );
 
     let text_op = Ops::show_text("Test Text");
-    assert_eq!(format!("{:?}", text_op), format!("{:?}", Ops::show_text("Test Text")));
+    assert_eq!(
+        format!("{:?}", text_op),
+        format!("{:?}", Ops::show_text("Test Text"))
+    );
 
     // Operations created successfully
     assert!(true);
@@ -133,7 +143,7 @@ fn test_ocg_performance() {
     // Add multiple layers for performance testing
     let start = Instant::now();
     for i in 0..50 {
-        manager.add_layer(Layer::new(&format!("Layer {}", i), true));
+        manager.add_layer(Layer::new(format!("Layer {}", i), true));
     }
     let duration = start.elapsed();
 
@@ -217,7 +227,11 @@ fn test_ocg_config_variations() {
         OCGConfig {
             base_state: "ON".to_string(),
             create_panel_ui: true,
-            intent: vec!["View".to_string(), "Design".to_string(), "Print".to_string()],
+            intent: vec![
+                "View".to_string(),
+                "Design".to_string(),
+                "Print".to_string(),
+            ],
         },
         OCGConfig {
             base_state: "Unchanged".to_string(),
@@ -259,8 +273,14 @@ fn test_layer_tags_and_resources() {
 
     // Verify tags
     assert_eq!(layer_tags.len(), 2);
-    assert_eq!(layer_tags.get(&"Layer A".to_string()), Some(&"L0".to_string()));
-    assert_eq!(layer_tags.get(&"Layer B".to_string()), Some(&"L1".to_string()));
+    assert_eq!(
+        layer_tags.get(&"Layer A".to_string()),
+        Some(&"L0".to_string())
+    );
+    assert_eq!(
+        layer_tags.get(&"Layer B".to_string()),
+        Some(&"L1".to_string())
+    );
 
     // Verify resources contain Properties
     assert!(resources.has(b"Properties"));
@@ -274,26 +294,26 @@ fn test_ocg_integration() {
 
     // Create a new PDF document
     let mut doc = Document::with_version("1.5");
-    
+
     // Setup basic document structure
     let pages_id = doc.add_object(dictionary! {
         "Type" => "Pages",
         "Count" => 1,
     });
-    
+
     // Add fonts
     let helvetica = doc.add_object(dictionary! {
         "Type" => "Font",
         "Subtype" => "Type1",
         "BaseFont" => "Helvetica",
     });
-    
+
     let helvetica_bold = doc.add_object(dictionary! {
         "Type" => "Font",
         "Subtype" => "Type1",
         "BaseFont" => "Helvetica-Bold",
     });
-    
+
     // 1. Create and configure the OCG manager
     let config = OCGConfig {
         base_state: "ON".to_string(),
@@ -301,17 +321,17 @@ fn test_ocg_integration() {
         intent: vec!["View".to_string(), "Design".to_string()],
     };
     let mut ocg_manager = OCGManager::with_config(config);
-    
+
     // 2. Define your layers
     ocg_manager.add_layer(Layer::new("Background", true));
     ocg_manager.add_layer(Layer::new("Main Content", true));
     ocg_manager.add_layer(Layer::new("Annotations", false));
     ocg_manager.add_layer(Layer::new("Watermark", false));
     ocg_manager.add_layer(Layer::new("Debug Info", false));
-    
+
     // 3. Initialize layers in the document
     ocg_manager.initialize(&mut doc);
-    
+
     // 4. Setup page resources
     let mut resources = dictionary! {
         "Font" => dictionary! {
@@ -319,12 +339,12 @@ fn test_ocg_integration() {
             "F2" => helvetica_bold,
         },
     };
-    
+
     let layer_tags = ocg_manager.setup_page_resources(&mut resources);
-    
+
     // 5. Build the page content using the LayerContentBuilder
     let mut builder = LayerContentBuilder::new();
-    
+
     // Background layer - a light blue background
     if let Some(bg_tag) = layer_tags.get(&"Background".to_string()) {
         builder
@@ -334,7 +354,7 @@ fn test_ocg_integration() {
             .add_operation(Ops::fill())
             .end_layer();
     }
-    
+
     // Main content layer
     if let Some(content_tag) = layer_tags.get(&"Main Content".to_string()) {
         builder
@@ -350,7 +370,9 @@ fn test_ocg_integration() {
             .add_operation(Ops::begin_text())
             .add_operation(Ops::set_font("F1", 12.0))
             .add_operation(Ops::text_position(50.0, 700.0))
-            .add_operation(Ops::show_text("This document contains multiple layers that can be toggled on/off."))
+            .add_operation(Ops::show_text(
+                "This document contains multiple layers that can be toggled on/off.",
+            ))
             .add_operation(Ops::end_text())
             // A shape
             .add_operation(Ops::set_fill_color_rgb(0.2, 0.6, 0.2))
@@ -358,7 +380,7 @@ fn test_ocg_integration() {
             .add_operation(Ops::fill())
             .end_layer();
     }
-    
+
     // Annotations layer - some red annotations
     if let Some(anno_tag) = layer_tags.get(&"Annotations".to_string()) {
         builder
@@ -376,7 +398,7 @@ fn test_ocg_integration() {
             .add_operation(Ops::end_text())
             .end_layer();
     }
-    
+
     // Watermark layer
     if let Some(watermark_tag) = layer_tags.get(&"Watermark".to_string()) {
         builder
@@ -389,7 +411,7 @@ fn test_ocg_integration() {
             .add_operation(Ops::end_text())
             .end_layer();
     }
-    
+
     // Debug info layer
     if let Some(debug_tag) = layer_tags.get(&"Debug Info".to_string()) {
         builder
@@ -406,22 +428,24 @@ fn test_ocg_integration() {
             .add_operation(Ops::end_text())
             .end_layer();
     }
-    
+
     // Content that's always visible (not in any layer)
     builder
         .add_operation(Ops::begin_text())
         .add_operation(Ops::set_fill_color_gray(0.0))
         .add_operation(Ops::set_font("F1", 10.0))
         .add_operation(Ops::text_position(50.0, 100.0))
-        .add_operation(Ops::show_text("This text is always visible (not in any layer)."))
+        .add_operation(Ops::show_text(
+            "This text is always visible (not in any layer).",
+        ))
         .add_operation(Ops::end_text());
-    
+
     // 6. Create the content stream from the builder
     let operations = builder.build();
     let content = Content { operations };
-    let content_stream = Stream::new(dictionary!{}, content.encode().unwrap());
+    let content_stream = Stream::new(dictionary! {}, content.encode().unwrap());
     let content_id = doc.add_object(content_stream);
-    
+
     // 7. Create the page
     let page_id = doc.add_object(dictionary! {
         "Type" => "Page",
@@ -430,23 +454,24 @@ fn test_ocg_integration() {
         "Contents" => content_id,
         "Resources" => resources,
     });
-    
+
     // 8. Update pages dictionary
-    let pages_dict = doc.get_object_mut(pages_id)
+    let pages_dict = doc
+        .get_object_mut(pages_id)
         .and_then(Object::as_dict_mut)
         .unwrap();
     pages_dict.set("Kids", vec![Object::Reference(page_id)]);
-    
+
     // 9. Create and setup the catalog
     let catalog_id = doc.add_object(dictionary! {
         "Type" => "Catalog",
         "Pages" => Object::Reference(pages_id),
     });
     doc.trailer.set("Root", Object::Reference(catalog_id));
-    
+
     // 10. Update the catalog with OCProperties
     ocg_manager.update_catalog(&mut doc);
-    
+
     // 11. Save the PDF
     let output_path = format!("{}/ocg_integration_test.pdf", TEST_OUTPUT_DIR);
 
@@ -461,11 +486,13 @@ fn test_ocg_integration() {
     println!("  - Annotations (hidden by default)");
     println!("  - Watermark (hidden by default)");
     println!("  - Debug Info (hidden by default)");
-    println!("\n💡 Open the PDF in a viewer that supports layers (like Adobe Acrobat) to toggle them!");
+    println!(
+        "\n💡 Open the PDF in a viewer that supports layers (like Adobe Acrobat) to toggle them!"
+    );
 }
 
 /// Clean up fixture
-#[test] 
+#[test]
 fn cleanup() {
     cleanup_test_files();
 }

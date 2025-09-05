@@ -2,11 +2,13 @@
 name = "hipdf"
 version = "0.1.0"
 edition = "2021"
+authors = ["Jorge Soares <jorge@example.com>"]
 description = "A high-level PDF manipulation library built on lopdf"
 license = "MIT"
 repository = "https://github.com/jorgesoares/hipdf"
 keywords = ["pdf", "lopdf", "layers", "ocg", "manipulation"]
 categories = ["multimedia", "api-bindings"]
+readme = "README.md"
 
 [lib]
 name = "hipdf"
@@ -20,17 +22,7 @@ lopdf = "0.38.0"
 [features]
 default = []
 
-# Workspace configuration for testing
-[workspace]
-members = []
-
-# Development scripts can be run with `cargo run --bin script_name`
-[build-dependencies]
-
 # Test configuration
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
-
-[package.metadata.cargo-udeps]
-ignore = ["lopdf"]

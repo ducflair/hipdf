@@ -34,21 +34,15 @@
 //! - [`layer`] - Layer management and utilities
 //! - [`hatching`] - Hatching and pattern support for PDF documents
 
-pub mod ocg;
-pub mod hatching;
 pub mod embed_pdf;
-
-
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_library_compilation() {
-        // Basic test to ensure library compiles correctly
-        assert!(true);
-    }
-}
+pub mod hatching;
+pub mod ocg;
 
 // Common type aliases and utilities
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 pub type Error = Box<dyn std::error::Error>;
+
+#[cfg(test)]
+mod tests {
+    // Tests are in separate integration test files
+}
