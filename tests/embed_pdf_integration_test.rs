@@ -2,10 +2,11 @@
 //!
 //! These tests validate and showcase all PDF embedding features
 
+use hipdf::lopdf::{content::Content, dictionary, Dictionary, Document, Object, Stream};
 use hipdf::embed_pdf::{
     CustomLayoutStrategy, EmbedOptions, GridFillOrder, MultiPageLayout, PageRange, PdfEmbedder,
 };
-use lopdf::{content::Content, dictionary, Dictionary, Document, Object, Stream};
+
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;

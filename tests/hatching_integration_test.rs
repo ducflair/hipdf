@@ -1,8 +1,8 @@
-use lopdf::{content::Content, dictionary, Dictionary, Document, Object, Stream};
 use std::collections::HashMap;
 use std::io::Result;
 use std::sync::Arc;
 
+use hipdf::lopdf::{content::Content, dictionary, Dictionary, Document, Object, Stream};
 use hipdf::hatching::{
     CustomPattern, HatchConfig, HatchStyle, HatchingManager, PatternedShapeBuilder,
     ProceduralPattern, Transform,

@@ -37,6 +37,7 @@
 pub mod embed_pdf;
 pub mod hatching;
 pub mod ocg;
+pub use lopdf;
 
 // Common type aliases and utilities
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;

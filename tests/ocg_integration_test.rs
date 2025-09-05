@@ -11,7 +11,8 @@
 //! - Performance and edge cases
 
 use hipdf::ocg::{Layer, LayerContentBuilder, LayerOperations as Ops, OCGConfig, OCGManager};
-use lopdf::{content::Content, dictionary, Document, Object, Stream};
+use hipdf::lopdf::{content::Content, dictionary, Document, Object, Stream};
+
 use std::fs;
 use std::path::Path;
 
