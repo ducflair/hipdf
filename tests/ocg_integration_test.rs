@@ -475,6 +475,7 @@ fn test_ocg_integration() {
 
     // 11. Save the PDF
     let output_path = format!("{}/ocg_integration_test.pdf", TEST_OUTPUT_DIR);
+    doc.save(&output_path).expect("Failed to save PDF");
 
     // Verify the file was created
     assert!(Path::new(&output_path).exists());

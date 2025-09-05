@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::io::Result;
 use std::sync::Arc;
+use std::path::Path;
 
 use hipdf::lopdf::{content::Content, dictionary, Dictionary, Document, Object, Stream};
 use hipdf::hatching::{
@@ -8,8 +9,18 @@ use hipdf::hatching::{
     ProceduralPattern, Transform,
 };
 
+/// Directory for hatching test outputs
+const HATCHING_TEST_OUTPUT_DIR: &str = "tests/outputs/hatching_integration_test";
+
+fn ensure_hatching_output_dir() {
+    if !Path::new(HATCHING_TEST_OUTPUT_DIR).exists() {
+        std::fs::create_dir_all(HATCHING_TEST_OUTPUT_DIR).expect("Failed to create hatching test output directory");
+    }
+}
+
 #[test]
 fn test_hatching_patterns_showcase() -> Result<()> {
+    ensure_hatching_output_dir();
     // Create a new PDF document
     let mut doc = Document::with_version("1.5");
 
@@ -353,7 +364,7 @@ fn test_hatching_patterns_showcase() -> Result<()> {
     doc.trailer.set("Root", Object::Reference(catalog_id));
 
     // Save the PDF
-    let output_path = std::path::Path::new("tests/outputs/hatching_patterns_integration_test.pdf");
+    let output_path = std::path::Path::new("tests/outputs/hatching_integration_test/hatching_patterns_integration_test.pdf");
     let absolute_path = std::env::current_dir()?.join(output_path);
     doc.save(&absolute_path)?;
 
@@ -372,6 +383,7 @@ fn test_hatching_patterns_showcase() -> Result<()> {
 
 #[test]
 fn test_custom_patterns_showcase() -> Result<()> {
+    ensure_hatching_output_dir();
     // Create a new PDF document
     let mut doc = Document::with_version("1.5");
 
@@ -584,7 +596,7 @@ fn test_custom_patterns_showcase() -> Result<()> {
     doc.trailer.set("Root", Object::Reference(catalog_id));
 
     let output_path =
-        std::path::Path::new("tests/outputs/hatching_custom_patterns_integration_test.pdf");
+        std::path::Path::new("tests/outputs/hatching_integration_test/hatching_custom_patterns_integration_test.pdf");
     let absolute_path = std::env::current_dir()?.join(output_path);
     doc.save(&absolute_path)?;
 

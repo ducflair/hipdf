@@ -37,6 +37,8 @@
 pub mod embed_pdf;
 pub mod hatching;
 pub mod ocg;
+pub mod blocks;
+
 pub use lopdf;
 
 // Common type aliases and utilities

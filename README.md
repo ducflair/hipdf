@@ -11,8 +11,11 @@ A high-level PDF manipulation library built on [lopdf](https://github.com/j-f-li
 - **Layer Management**: High-level API for organizing content into toggleable layers
 - **Hatching Patterns**: Support for various fill patterns including crosshatching, dots, and custom patterns
 - **PDF Embedding**: Embed other PDF documents with various layout strategies
+- **Block System**: Reusable PDF content components with transformations and efficient rendering
 - **Type Safety**: Strongly typed interfaces with compile-time guarantees
 
+# Showcase
+You can see the results of our test suit in [this](https://github.com/ducflair/hipdf/tree/main/tests/outputs) folder.
 
 
 ## Quick Start
@@ -21,7 +24,7 @@ A high-level PDF manipulation library built on [lopdf](https://github.com/j-f-li
 
 ```rust
 use hipdf::ocg::{OCGManager, Layer, LayerContentBuilder, LayerOperations as Ops};
-use lopdf::{Document, Object};
+use hipdf::lopdf::{Document, Object};
 
 // Create a new PDF with layers
 let mut doc = Document::with_version("1.5");
@@ -80,11 +83,39 @@ let options = EmbedOptions {
 embedder.embed_pdf(&mut target_doc, "doc1", &options)?;
 ```
 
+### Creating Reusable Blocks
+
+```rust
+use hipdf::blocks::{BlockManager, Block, BlockInstance, Transform};
+use hipdf::lopdf::content::Operation;
+
+// Create a block manager
+let mut manager = BlockManager::new();
+
+// Create a reusable block
+let mut block = Block::new("my_shape", vec![
+    Operation::new("re", vec![0.into(), 0.into(), 100.into(), 50.into()]),
+    Operation::new("f", vec![]),
+]);
+manager.register(block);
+
+// Create instances with different transformations
+let instances = vec![
+    BlockInstance::at("my_shape", 50.0, 100.0),
+    BlockInstance::at_scaled("my_shape", 200.0, 100.0, 0.5),
+    BlockInstance::new("my_shape", Transform::full(350.0, 100.0, 1.5, 1.5, 45.0)),
+];
+
+// Render all instances
+let operations = manager.render_instances(&instances);
+```
+
 ## Modules
 
 - [`ocg`] - Optional Content Groups (layers) functionality
 - [`hatching`] - Hatching and pattern support for PDF documents
 - [`embed_pdf`] - PDF embedding and composition support
+- [`blocks`] - Reusable PDF content components with transformations
 
 ## Usage Examples
 
@@ -141,10 +172,33 @@ layout_builder
 let final_doc = layout_builder.build()?;
 ```
 
+### Block System
+
+```rust
+use hipdf::blocks::{BlockManager, Block, BlockInstance, Transform};
+
+// Create block manager and register reusable content
+let mut manager = BlockManager::new();
+let star_block = Block::new("star", vec![
+    // Operations to draw a star shape
+]).with_bbox(0.0, 0.0, 50.0, 50.0);
+manager.register(star_block);
+
+// Create multiple instances with different positions and transformations
+let instances = vec![
+    BlockInstance::at("star", 100.0, 200.0),
+    BlockInstance::new("star", Transform::translate_scale(200.0, 200.0, 1.5)),
+    BlockInstance::new("star", Transform::full(300.0, 200.0, 0.8, 0.8, 30.0)),
+];
+
+// Render instances efficiently using Form XObjects
+manager.create_xobjects(&mut doc);
+let operations = manager.render_instances_as_xobjects(&instances, &mut resources);
+```
+
 ## Requirements
 
 - Rust 1.70+
-- [lopdf](https://crates.io/crates/lopdf) 0.38.0
 
 ## License
 
