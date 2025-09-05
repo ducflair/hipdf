@@ -1,6 +1,6 @@
 [package]
 name = "hipdf"
-version = "0.1.0"
+version = "0.0.0-development"
 edition = "2021"
 authors = ["Jorge Soares <jorge@ducflair.com>"]
 description = "A high-level PDF manipulation library built on lopdf"
@@ -9,6 +9,11 @@ repository = "https://github.com/ducflair/hipdf"
 keywords = ["pdf", "lopdf", "layers", "ocg", "manipulation"]
 categories = ["multimedia", "api-bindings"]
 readme = "README.md"
+exclude = [
+    "tests/outputs/", 
+    "tests/assets/",
+    "node_modules/**/*",
+]
 
 [lib]
 name = "hipdf"

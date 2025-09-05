@@ -1,4 +1,4 @@
-//! # HiPDF
+//! # hipdf
 //!
 //! A high-level PDF manipulation library built on lopdf, focusing on ease of use
 //! and powerful abstractions for common PDF operations.

@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "version": "0.0.0-development",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/duc/hipdf"
+  },
+  "scripts": {
+    "test": "cargo test",
+    "build": "cargo build"
+  },
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/exec": "7.1.0",
+    "@semantic-release/release-notes-generator": "14.0.3",
+    "semantic-release": "24.2.7"
+  },
+  "dependencies": {
+    "@semantic-release/github": "^11.0.5"
+  }
+}

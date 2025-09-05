@@ -2,274 +2,158 @@
 
 [![Crates.io](https://img.shields.io/crates/v/hipdf.svg)](https://crates.io/crates/hipdf)
 [![Documentation](https://docs.rs/hipdf/badge.svg)](https://docs.rs/hipdf)
-[![Build Status](https://github.com/jorgesoares/hipdf/workflows/CI/badge.svg)](https://github.com/jorgesoares/hipdf/actions)
 
-A high-level PDF manipulation library built on [lopdf](https://github.com/j-f-liu/lopdf), focusing on ease of use and powerful abstractions for common PDF operations.
+A high-level PDF manipulation library built on [lopdf](https://github.com/j-f-liu/lopdf), focusing on ease of use and powerful abstractions for common PDF operations following the **ISO 32000-2** standard.
 
 ## Features
 
-- **🖼️ OCG (Optional Content Groups) Support**: Easy creation and management of PDF layers
-- **🔧 Layer Management**: High-level API for organizing content into toggleable layers
-- **📦 Content Building**: Fluent API for building layered PDF content
-- **🛡️ Type Safety**: Strongly typed interfaces with compile-time guarantees
-- **⚡ Performance**: Efficient operations with minimal allocations
+- **Optional Content Groups (OCG)**: Easy creation and management of PDF layers
+- **Layer Management**: High-level API for organizing content into toggleable layers
+- **Hatching Patterns**: Support for various fill patterns including crosshatching, dots, and custom patterns
+- **PDF Embedding**: Embed other PDF documents with various layout strategies
+- **Type Safety**: Strongly typed interfaces with compile-time guarantees
 
-## Installation
 
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-hipdf = "0.1.0"
-```
 
 ## Quick Start
 
-```rust
-use hipdf::{OCGManager, Layer, LayerContentBuilder, LayerOperations as Ops};
-use lopdf::{dictionary, Document, Object, content::Content, Stream};
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a new PDF document
-    let mut doc = Document::with_version("1.5");
-
-    // Configure the OCG manager
-    let config = hipdf::OCGConfig::default();
-    let mut ocg_manager = OCGManager::with_config(config);
-
-    // Add layers
-    ocg_manager.add_layer(Layer::new("Main Content", true));
-    ocg_manager.add_layer(Layer::new("Annotations", false));
-    ocg_manager.add_layer(Layer::new("Watermark", false));
-
-    // Initialize layers in the document
-    ocg_manager.initialize(&mut doc);
-
-    // Build your PDF...
-    // (See examples for complete implementation)
-
-    Ok(())
-}
-```
-
-## Project Structure
-
-```
-hipdf/
-├── src/
-│   ├── lib.rs           # Main library module
-│   ├── ocg.rs           # OCG implementation
-│   └── examples/
-│       └── ocg_example.rs  # Complete example
-├── tests/
-│   └── ocg_integration_test.rs  # Integration tests
-├── Makefile             # Development commands
-├── Cargo.toml           # Dependencies and project config
-└── README.md            # This file
-```
-
-## Examples
-
-Run the included example:
-
-```bash
-# Clone the repository
-git clone https://github.com/jorgesoares/hipdf.git
-cd hipdf
-
-# Run the example
-make example
-
-# Or using cargo directly
-cargo run --bin hipdf-example
-```
-
-This creates a PDF with multiple layers that can be toggled in compatible PDF viewers.
-
-## Usage
-
-### Creating Layers
+### Creating PDF Layers
 
 ```rust
-use hipdf::{OCGManager, Layer};
+use hipdf::ocg::{OCGManager, Layer, LayerContentBuilder, LayerOperations as Ops};
+use lopdf::{Document, Object};
 
-// Create a layer manager
-let mut manager = OCGManager::new();
+// Create a new PDF with layers
+let mut doc = Document::with_version("1.5");
+let mut ocg_manager = OCGManager::with_config(Default::default());
 
-// Add individual layers
-let main_layer = Layer::new("Main Content", true);
-let annotations_layer = Layer::new("Annotations", false);
+// Add layers
+ocg_manager.add_layer(Layer::new("Background", true));
+ocg_manager.add_layer(Layer::new("Main Content", true));
+ocg_manager.add_layer(Layer::new("Annotations", false));
 
-// Add layers to manager
-manager.add_layer(main_layer);
-manager.add_layer(annotations_layer);
-```
+// Initialize layers in document
+ocg_manager.initialize(&mut doc);
 
-### Building Content
-
-```rust
-use hipdf::{LayerContentBuilder, LayerOperations as Ops};
-
-// Create a content builder
+// Build content for specific layers
 let mut builder = LayerContentBuilder::new();
-
-// Add content to specific layers
 builder.begin_layer("L0")
     .add_operation(Ops::rectangle(50.0, 50.0, 200.0, 100.0))
     .add_operation(Ops::fill())
     .end_layer();
-
-// Get the operations
-let content = builder.build();
 ```
 
-### Document Integration
+### Adding Hatching Patterns
 
 ```rust
-// Initialize in document
-manager.initialize(&mut doc);
+use hipdf::hatching::{HatchingManager, HatchStyle, PatternedShapeBuilder};
 
-// Setup page resources
-let resources = dictionary! { "Font" => font_refs };
-let layer_tags = manager.setup_page_resources(&mut resources);
+// Create a hatching manager
+let mut manager = HatchingManager::new();
 
-// Update catalog
-manager.update_catalog(&mut doc);
+// Add a diagonal pattern
+let pattern_id = manager.add_pattern(HatchStyle::DiagonalRight, 5.0, 1.0);
+
+// Create a shape with the pattern
+let mut builder = PatternedShapeBuilder::new();
+builder.rectangle(100.0, 100.0, 200.0, 150.0, &pattern_id);
 ```
 
-## Development
+### Embedding PDFs
 
-### Prerequisites
+```rust
+use hipdf::embed_pdf::{PdfEmbedder, EmbedOptions, MultiPageLayout};
+
+// Create an embedder
+let mut embedder = PdfEmbedder::new();
+
+// Load a PDF
+embedder.load_pdf("source.pdf", "doc1")?;
+
+let options = EmbedOptions {
+    layout: MultiPageLayout::Vertical { gap: 10.0 },
+    scale: 1.0,
+    ..Default::default()
+};
+
+// Embed into target document
+embedder.embed_pdf(&mut target_doc, "doc1", &options)?;
+```
+
+## Modules
+
+- [`ocg`] - Optional Content Groups (layers) functionality
+- [`hatching`] - Hatching and pattern support for PDF documents
+- [`embed_pdf`] - PDF embedding and composition support
+
+## Usage Examples
+
+### Layer Management
+
+```rust
+use hipdf::ocg::{OCGManager, Layer};
+
+// Create layer manager
+let mut manager = OCGManager::new();
+
+// Add layers with different visibility settings
+manager.add_layer(Layer::new("Background", true));
+manager.add_layer(Layer::new("Content", true));
+manager.add_layer(Layer::new("Debug", false));
+
+// Initialize in PDF document
+manager.initialize(&mut doc);
+```
+
+### Custom Hatching Patterns
+
+```rust
+use hipdf::hatching::{CustomPatternBuilder, HatchStyle};
+
+// Create custom pattern
+let mut pattern_builder = CustomPatternBuilder::new();
+pattern_builder
+    .move_to(0.0, 0.0)
+    .line_to(10.0, 10.0)
+    .line_to(20.0, 0.0);
+
+// Register the pattern
+let custom_pattern_id = manager.add_custom_pattern(pattern_builder.build());
+```
+
+### Advanced PDF Embedding
+
+```rust
+use hipdf::embed_pdf::{EmbedLayoutBuilder, LayoutStrategy};
+
+// Create layout builder
+let mut layout_builder = EmbedLayoutBuilder::new();
+
+// Add multiple PDFs with different layouts
+layout_builder
+    .add_pdf("doc1.pdf", LayoutStrategy::SinglePage { x: 0.0, y: 0.0 })
+    .add_pdf("doc2.pdf", LayoutStrategy::Grid {
+        columns: 2,
+        spacing: 10.0
+    });
+
+// Generate the final document
+let final_doc = layout_builder.build()?;
+```
+
+## Requirements
 
 - Rust 1.70+
-- Cargo
-
-### Building
-
-```bash
-# Quick build
-make build
-# or
-cargo build
-
-# Build in release mode
-make build-release
-# or
-cargo build --release
-```
-
-### Testing
-
-```bash
-# Run all tests
-make test
-# or
-cargo test
-
-# Run with verbose output
-make test-verbose
-# or
-cargo test -- --nocapture
-
-# Run specific test
-cargo test test_ocg_integration
-
-# Run performance test
-cargo test test_ocg_performance
-```
-
-### Development Workflow
-
-Use the provided Makefile for common tasks:
-
-```bash
-# Format code
-make fmt
-
-# Run linter
-make clippy
-
-# Full development check (format + lint + check + test)
-make dev-check
-
-# Generate documentation
-make doc
-
-# Clean build artifacts
-make clean
-```
-
-### Testing Output
-
-Tests that generate PDF files will place them in `tests/outputs/` directory. The `.gitignore` file ensures these are not committed to version control.
-
-## API Reference
-
-### Core Types
-
-- **`OCGManager`**: Main struct for managing Optional Content Groups
-  - `new()` - Create with default configuration
-  - `with_config(config)` - Create with custom configuration
-  - `add_layer(layer)` - Add a layer
-  - `initialize(document)` - Set up layers in document
-  - `setup_page_resources(resources)` - Configure page for layers
-  - `update_catalog(document)` - Update document catalog
-
-- **`Layer`**: Represents a single PDF layer
-  - `new(name, visible)` - Create a new layer
-  - `with_visibility(visible)` - Set visibility (fluent API)
-
-- **`LayerContentBuilder`**: Fluent API for building layer content
-  - `new()` - Create a new builder
-  - `begin_layer(tag)` - Start content for a layer
-  - `add_operation(op)` - Add a PDF operation
-  - `end_layer()` - End current layer
-  - `build()` - Get final operations
-
-- **`OCGConfig`**: Configuration for OCG system
-  - `base_state` - Default ON/OFF state for layers
-  - `create_panel_ui` - Whether to show layer panel
-  - `intent` - Layer purposes (View, Design, etc.)
-
-### OCG Implementation Details
-
-HiPDF implements the PDF Optional Content Groups (OCG) specification:
-
-- **OCG Objects**: Each layer becomes an OCG object with a name and visibility settings
-- **OCProperties**: Contains layer ordering and default visibility
-- **BDC/EMC Operators**: Content streams use these operators to mark layer boundaries
-- **Resource Properties**: Layers are registered in page resource dictionaries
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Make sure tests pass (`make dev-check`)
-4. Commit your changes (`git commit -m 'Add amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+- [lopdf](https://crates.io/crates/lopdf) 0.38.0
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+## Contributing
 
-- Built on top of the excellent [lopdf](https://github.com/j-f-liu/lopdf) library
-- PDF OCG specification (ISO 32000-2)
-- Rust community for the fantastic ecosystem
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Roadmap
+## API Documentation
 
-- [ ] Additional PDF manipulation features (text, images, forms)
-- [ ] More OCG extensions (usage application, viewer preferences)
-- [ ] PDF/A compliance checking
-- [ ] Performance optimizations
-- [ ] More comprehensive test coverage
-- [ ] Documentation improvements
-
----
-
-For more information, see the [API documentation](https://docs.rs/hipdf) or explore the examples in `src/examples/`.
+For complete API documentation, visit [docs.rs/hipdf](https://docs.rs/hipdf).
