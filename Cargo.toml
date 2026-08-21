@@ -29,14 +29,14 @@ ttf-parser = { version = "0.20", features = ["variable-fonts"] }
 # Target-specific configuration to ensure correct behavior without consumer-side feature flags
 # For non-WASM targets, use lopdf with its default native features
 [target.'cfg(not(all(target_arch = "wasm32", target_os = "unknown")))'.dependencies]
-lopdf = { version = "0.38.0" }
+lopdf = { version = "=0.42.0" }
 
 # For wasm32-unknown-unknown, enable lopdf's wasm_js mode and getrandom's wasm_js support
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
-lopdf = { version = "0.38.0", default-features = false, features = ["wasm_js"] }
+lopdf = { version = "=0.42.0", default-features = false, features = ["wasm_js"] }
 
 [dev-dependencies]
-png = { version = "0.18.0", features = ["unstable"] }
+png = "0.18.0"
 wasm-bindgen-test = "0.3"
 
 [features]
