@@ -38,12 +38,19 @@ pub enum GridFillOrder {
 }
 
 /// Custom layout strategy for maximum flexibility
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub struct CustomLayoutStrategy {
     /// Function to calculate position for each page
     pub position_fn: fn(page_index: usize, page_width: f32, page_height: f32) -> (f32, f32),
     /// Function to calculate scale for each page
     pub scale_fn: fn(page_index: usize) -> (f32, f32),
+}
+
+impl PartialEq for CustomLayoutStrategy {
+    fn eq(&self, other: &Self) -> bool {
+        (self.position_fn as usize) == (other.position_fn as usize)
+            && (self.scale_fn as usize) == (other.scale_fn as usize)
+    }
 }
 
 /// Options for embedding a PDF
@@ -447,34 +454,49 @@ impl PdfEmbedder {
         // Get page dimensions (raw MediaBox)
         let (raw_w, raw_h) = self.get_raw_media_box_dims(page_dict, source_doc);
 
+        // Read the /UserUnit attribute (PDF 1.6+, may be inherited).
+        let user_unit = self.resolve_page_user_unit(page_dict, source_doc);
+
         // Read the /Rotate attribute (may be inherited from parent /Pages nodes).
-        // Form XObjects don't support /Rotate, so we must bake the rotation into
+        // Form XObjects don't support /Rotate or /UserUnit, so we must bake both into
         // the BBox and prepend a correcting `cm` transform to the content stream.
         let rotate = self.resolve_page_rotate(page_dict, source_doc);
 
-        // After rotation the visual (BBox) dimensions may be swapped.
+        let phys_w = raw_w * user_unit;
+        let phys_h = raw_h * user_unit;
+
+        // After rotation and user unit scaling, compute visual (BBox) dimensions and CTM.
         // /Rotate specifies CW degrees the viewer applies on display.
-        // We must bake the same CW rotation into the content stream.
-        let (bbox_w, bbox_h, rotation_cm) = match rotate {
+        let (bbox_w, bbox_h, transform_cm) = match rotate {
             90 => (
-                raw_h,
-                raw_w,
-                // 90° CW: x' = y,  y' = W - x  →  [0 -1 1 0 0 W]
-                Some(format!("0 -1 1 0 0 {} cm\n", raw_w)),
+                phys_h,
+                phys_w,
+                // 90° CW: x' = user_unit * y,  y' = phys_w - user_unit * x  →  [0 -user_unit user_unit 0 0 phys_w]
+                Some(format!("0 -{} {} 0 0 {} cm\n", user_unit, user_unit, phys_w)),
             ),
             180 => (
-                raw_w,
-                raw_h,
-                // 180°: x' = W - x,  y' = H - y  →  [-1 0 0 -1 W H]
-                Some(format!("-1 0 0 -1 {} {} cm\n", raw_w, raw_h)),
+                phys_w,
+                phys_h,
+                // 180°: x' = phys_w - user_unit * x,  y' = phys_h - user_unit * y  →  [-user_unit 0 0 -user_unit phys_w phys_h]
+                Some(format!("-{} 0 0 -{} {} {} cm\n", user_unit, user_unit, phys_w, phys_h)),
             ),
             270 => (
-                raw_h,
-                raw_w,
-                // 270° CW (= 90° CCW): x' = H - y,  y' = x  →  [0 1 -1 0 H 0]
-                Some(format!("0 1 -1 0 {} 0 cm\n", raw_h)),
+                phys_h,
+                phys_w,
+                // 270° CW (= 90° CCW): x' = phys_h - user_unit * y,  y' = user_unit * x  →  [0 user_unit -user_unit 0 phys_h 0]
+                Some(format!("0 {} -{} 0 {} 0 cm\n", user_unit, user_unit, phys_h)),
             ),
-            _ => (raw_w, raw_h, None),
+            _ => {
+                if (user_unit - 1.0).abs() > f32::EPSILON {
+                    (
+                        phys_w,
+                        phys_h,
+                        Some(format!("{} 0 0 {} 0 0 cm\n", user_unit, user_unit)),
+                    )
+                } else {
+                    (phys_w, phys_h, None)
+                }
+            }
         };
 
         let bbox = Object::Array(vec![
@@ -489,7 +511,7 @@ impl PdfEmbedder {
         // transparently decode stream.content during loading while leaving the
         // Filter key in the dict, so trusting raw bytes + dict is unreliable.
         let raw_content = self.get_page_content_stream(source_doc, page_dict)?;
-        let final_content = if let Some(cm_str) = rotation_cm {
+        let final_content = if let Some(cm_str) = transform_cm {
             let mut buf = cm_str.into_bytes();
             buf.extend_from_slice(&raw_content);
             buf
@@ -641,29 +663,58 @@ impl PdfEmbedder {
         }
     }
 
-    /// Get the raw MediaBox dimensions (width, height) without applying /Rotate.
+    /// Get the raw MediaBox dimensions (width, height) without applying /Rotate or /UserUnit.
     fn get_raw_media_box_dims(&self, page_dict: &Dictionary, source_doc: &Document) -> (f32, f32) {
-        let obj = page_dict
-            .get(b"MediaBox")
-            .ok()
-            .and_then(|o| match o {
-                Object::Reference(id) => source_doc.get_object(*id).ok().cloned(),
-                other => Some(other.clone()),
-            });
-        if let Some(Object::Array(coords)) = obj {
-            if coords.len() >= 4 {
-                let to_f32 = |o: &Object| match o {
-                    Object::Real(v) => *v,
-                    Object::Integer(v) => *v as f32,
-                    _ => 0.0,
-                };
-                let x1 = to_f32(&coords[0]);
-                let y1 = to_f32(&coords[1]);
-                let x2 = to_f32(&coords[2]);
-                let y2 = to_f32(&coords[3]);
-                return ((x2 - x1).abs(), (y2 - y1).abs());
+        let extract_box = |dict: &Dictionary| -> Option<(f32, f32)> {
+            let obj = dict
+                .get(b"MediaBox")
+                .ok()
+                .and_then(|o| match o {
+                    Object::Reference(id) => source_doc.get_object(*id).ok().cloned(),
+                    other => Some(other.clone()),
+                });
+            if let Some(Object::Array(coords)) = obj {
+                if coords.len() >= 4 {
+                    let to_f32 = |o: &Object| match o {
+                        Object::Real(v) => *v,
+                        Object::Integer(v) => *v as f32,
+                        _ => 0.0,
+                    };
+                    let x1 = to_f32(&coords[0]);
+                    let y1 = to_f32(&coords[1]);
+                    let x2 = to_f32(&coords[2]);
+                    let y2 = to_f32(&coords[3]);
+                    return Some(((x2 - x1).abs(), (y2 - y1).abs()));
+                }
+            }
+            None
+        };
+
+        if let Some(dims) = extract_box(page_dict) {
+            return dims;
+        }
+
+        // Walk up the page tree via /Parent references for inherited MediaBox
+        let mut current = page_dict.get(b"Parent").ok().cloned();
+        while let Some(obj) = current {
+            let parent_obj = match &obj {
+                Object::Reference(id) => source_doc.get_object(*id).ok(),
+                _ => None,
+            };
+            if let Some(parent) = parent_obj {
+                if let Ok(dict) = parent.as_dict() {
+                    if let Some(dims) = extract_box(dict) {
+                        return dims;
+                    }
+                    current = dict.get(b"Parent").ok().cloned();
+                } else {
+                    break;
+                }
+            } else {
+                break;
             }
         }
+
         (595.0, 842.0)
     }
 
@@ -762,23 +813,36 @@ impl PdfEmbedder {
     }
 
     /// Get dimensions of a page from its dictionary.
-    /// Returns the VISUAL (post-/Rotate) dimensions so grid layouts use correct cell sizes.
+    /// Returns the VISUAL (post-/Rotate and post-/UserUnit) dimensions so layout calculations use correct physical sizes.
     fn get_page_dimensions(&self, page_dict: &Dictionary, source_doc: &Document) -> (f32, f32) {
         let (raw_w, raw_h) = self.get_raw_media_box_dims(page_dict, source_doc);
+        let user_unit = self.resolve_page_user_unit(page_dict, source_doc);
+        let (phys_w, phys_h) = (raw_w * user_unit, raw_h * user_unit);
         let rotate = self.resolve_page_rotate(page_dict, source_doc);
         match rotate {
-            90 | 270 => (raw_h, raw_w),
-            _ => (raw_w, raw_h),
+            90 | 270 => (phys_h, phys_w),
+            _ => (phys_w, phys_h),
         }
     }
 
     /// Resolve the effective /Rotate value for a page, walking up the page tree
     /// to find inherited values. Returns 0, 90, 180, or 270.
     fn resolve_page_rotate(&self, page_dict: &Dictionary, doc: &Document) -> i64 {
-        // Check the page dict itself first
-        if let Ok(Object::Integer(n)) = page_dict.get(b"Rotate") {
-            return (*n).rem_euclid(360);
+        let extract_rotate = |dict: &Dictionary| -> Option<i64> {
+            let obj = dict.get(b"Rotate").ok().and_then(|o| match o {
+                Object::Reference(id) => doc.get_object(*id).ok().cloned(),
+                other => Some(other.clone()),
+            });
+            match obj {
+                Some(Object::Integer(n)) => Some(n),
+                _ => None,
+            }
+        };
+
+        if let Some(n) = extract_rotate(page_dict) {
+            return n.rem_euclid(360);
         }
+
         // Walk up the page tree via /Parent references
         let mut current = page_dict.get(b"Parent").ok().cloned();
         while let Some(obj) = current {
@@ -788,8 +852,8 @@ impl PdfEmbedder {
             };
             if let Some(parent) = parent_obj {
                 if let Ok(dict) = parent.as_dict() {
-                    if let Ok(Object::Integer(n)) = dict.get(b"Rotate") {
-                        return (*n).rem_euclid(360);
+                    if let Some(n) = extract_rotate(dict) {
+                        return n.rem_euclid(360);
                     }
                     current = dict.get(b"Parent").ok().cloned();
                 } else {
@@ -800,6 +864,52 @@ impl PdfEmbedder {
             }
         }
         0
+    }
+
+    /// Resolve the effective /UserUnit value for a page, walking up the page tree
+    /// to find inherited values (PDF 1.6+, §7.7.3.3). Returns 1.0 by default.
+    fn resolve_page_user_unit(&self, page_dict: &Dictionary, doc: &Document) -> f32 {
+        let extract_user_unit = |dict: &Dictionary| -> Option<f32> {
+            let obj = dict.get(b"UserUnit").ok().and_then(|o| match o {
+                Object::Reference(id) => doc.get_object(*id).ok().cloned(),
+                other => Some(other.clone()),
+            });
+            match obj {
+                Some(Object::Real(v)) => Some(v as f32),
+                Some(Object::Integer(v)) => Some(v as f32),
+                _ => None,
+            }
+        };
+
+        if let Some(uu) = extract_user_unit(page_dict) {
+            if uu > 0.0 {
+                return uu;
+            }
+        }
+
+        // Walk up the page tree via /Parent references
+        let mut current = page_dict.get(b"Parent").ok().cloned();
+        while let Some(obj) = current {
+            let parent_obj = match &obj {
+                Object::Reference(id) => doc.get_object(*id).ok(),
+                _ => None,
+            };
+            if let Some(parent) = parent_obj {
+                if let Ok(dict) = parent.as_dict() {
+                    if let Some(uu) = extract_user_unit(dict) {
+                        if uu > 0.0 {
+                            return uu;
+                        }
+                    }
+                    current = dict.get(b"Parent").ok().cloned();
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        1.0
     }
 
     /// Determine which pages to include based on options
