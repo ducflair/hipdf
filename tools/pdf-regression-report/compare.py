@@ -467,6 +467,9 @@ def copy_web_assets(output_dir: Path) -> None:
             shutil.copy2(src, output_dir / filename)
         else:
             print(f"Warning: static asset {src} not found.", file=sys.stderr)
+    
+    # Create .nojekyll to disable Jekyll on GitHub Pages
+    (output_dir / ".nojekyll").touch(exist_ok=True)
 
 
 def generate_markdown_summary(results: Dict[str, Any], preview_url: Optional[str] = None) -> str:
