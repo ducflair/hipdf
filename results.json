@@ -1,0 +1,607 @@
+{
+  "mode": "production",
+  "timestamp": "2026-08-22T13:14:25.571625+00:00",
+  "meta": {
+    "pr_number": "",
+    "pr_title": "",
+    "base_sha": "66b9c9da",
+    "head_sha": "",
+    "base_sha_full": "66b9c9daed49d9c4ca1a17bb0da12b731677f301",
+    "head_sha_full": "",
+    "base_ref": "main",
+    "head_ref": "",
+    "preview_url": "https://ducflair.github.io/hipdf/",
+    "dpi": 144
+  },
+  "summary": {
+    "total_files": 19,
+    "unchanged": 19,
+    "changed": 0,
+    "added": 0,
+    "removed": 0,
+    "total_pages": 20,
+    "diff_pages": 0
+  },
+  "files": [
+    {
+      "filename": "blocks_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/blocks_test.pdf",
+      "candidate_path": "production/blocks_test.pdf",
+      "baseline_path": "production/blocks_test.pdf",
+      "size": 3099,
+      "candidate_size": 3099,
+      "baseline_size": 3099,
+      "sha256": "38755b374dfae2a3c6fe5f95b1b3ce3fc8d2f1bc0f3fdd56d857e8208f260ae3",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/clipping_bounds_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/clipping_bounds_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/clipping_bounds_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/clipping_bounds_test.pdf",
+      "size": 965310,
+      "candidate_size": 965310,
+      "baseline_size": 965310,
+      "sha256": "40a5355a8d17cd2269d782056640ab03bdb1b25b528b6053de5866bbef503e47",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/comprehensive_showcase_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/comprehensive_showcase_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/comprehensive_showcase_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/comprehensive_showcase_test.pdf",
+      "size": 1073333,
+      "candidate_size": 1073333,
+      "baseline_size": 1073333,
+      "sha256": "3daf25405f66c240a75ffe03ee14eb2ff10dfad0dca0592607f2450a92c6621d",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/custom_layouts_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/custom_layouts_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/custom_layouts_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/custom_layouts_test.pdf",
+      "size": 1008398,
+      "candidate_size": 1008398,
+      "baseline_size": 1008398,
+      "sha256": "d1ce4fbc3f037490f35ef876816030e2eefabc4dbeb93a0d02b90327eafc948d",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/grid_layouts_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/grid_layouts_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/grid_layouts_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/grid_layouts_test.pdf",
+      "size": 1020194,
+      "candidate_size": 1020194,
+      "baseline_size": 1020194,
+      "sha256": "a503edb2603f2e1376327dd18a7b1f1d646a7ac2c6015553c071af8a166eda53",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/horizontal_layouts_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/horizontal_layouts_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/horizontal_layouts_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/horizontal_layouts_test.pdf",
+      "size": 970073,
+      "candidate_size": 970073,
+      "baseline_size": 970073,
+      "sha256": "7b5c309877f023919669d65aef47150f58d3f0ce7bbee32bbea5f550afced9ee",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/mixed_pdfs_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/mixed_pdfs_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/mixed_pdfs_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/mixed_pdfs_test.pdf",
+      "size": 965722,
+      "candidate_size": 965722,
+      "baseline_size": 965722,
+      "sha256": "a22181a7b7734522b92736524e94d859000b0bcf277f89110f98c17c7c3864db",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/page_ranges_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/page_ranges_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/page_ranges_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/page_ranges_test.pdf",
+      "size": 998317,
+      "candidate_size": 998317,
+      "baseline_size": 998317,
+      "sha256": "9c3e9502f37940a76ff93298d5c349876047c7e5f43687a1f516d455e86cf59c",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/rotation_transformations_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/rotation_transformations_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/rotation_transformations_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/rotation_transformations_test.pdf",
+      "size": 970467,
+      "candidate_size": 970467,
+      "baseline_size": 970467,
+      "sha256": "002531f13335efad020c419c74122f6093952b7b102149c9316c071f0ba127da",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/scaling_sizing_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/scaling_sizing_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/scaling_sizing_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/scaling_sizing_test.pdf",
+      "size": 958925,
+      "candidate_size": 958925,
+      "baseline_size": 958925,
+      "sha256": "25ae071f6774aa45c91a44d25c7cbeceb702d7a50804a143598f09f72ae64627",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "embed_pdf_integration_test/vertical_layouts_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/embed_pdf_integration_test/vertical_layouts_test.pdf",
+      "candidate_path": "production/embed_pdf_integration_test/vertical_layouts_test.pdf",
+      "baseline_path": "production/embed_pdf_integration_test/vertical_layouts_test.pdf",
+      "size": 965599,
+      "candidate_size": 965599,
+      "baseline_size": 965599,
+      "sha256": "cfc61f59ff521f4c0c8ae5288c397e0419cea994b84172d65573f1901000d7ff",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "fonts_builder_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/fonts_builder_test.pdf",
+      "candidate_path": "production/fonts_builder_test.pdf",
+      "baseline_path": "production/fonts_builder_test.pdf",
+      "size": 692,
+      "candidate_size": 692,
+      "baseline_size": 692,
+      "sha256": "9061d4452482f22279214d8fd82777619f12d42962bfcaf6f1e5c4241c059ec8",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "fonts_custom_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/fonts_custom_test.pdf",
+      "candidate_path": "production/fonts_custom_test.pdf",
+      "baseline_path": "production/fonts_custom_test.pdf",
+      "size": 1348856,
+      "candidate_size": 1348856,
+      "baseline_size": 1348856,
+      "sha256": "af401a7de35f71d266567d2b1dc3b068f5c44fded8e0ccd592889350592fab39",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "fonts_standard_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/fonts_standard_test.pdf",
+      "candidate_path": "production/fonts_standard_test.pdf",
+      "baseline_path": "production/fonts_standard_test.pdf",
+      "size": 1804,
+      "candidate_size": 1804,
+      "baseline_size": 1804,
+      "sha256": "04b4cff3f104f6ff3296e0d8008255412b8edc6d4c8e84556a857a40a65d0807",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "hatching_integration_test/hatching_custom_patterns_integration_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/hatching_integration_test/hatching_custom_patterns_integration_test.pdf",
+      "candidate_path": "production/hatching_integration_test/hatching_custom_patterns_integration_test.pdf",
+      "baseline_path": "production/hatching_integration_test/hatching_custom_patterns_integration_test.pdf",
+      "size": 8756,
+      "candidate_size": 8756,
+      "baseline_size": 8756,
+      "sha256": "2fe11d4a7c9a0c858f823a734389e85da8f68404371786b29ab75d1b05937037",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "hatching_integration_test/hatching_patterns_integration_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/hatching_integration_test/hatching_patterns_integration_test.pdf",
+      "candidate_path": "production/hatching_integration_test/hatching_patterns_integration_test.pdf",
+      "baseline_path": "production/hatching_integration_test/hatching_patterns_integration_test.pdf",
+      "size": 8687,
+      "candidate_size": 8687,
+      "baseline_size": 8687,
+      "sha256": "52b37517693606bea124d10dade6967c6b67b36867af479f0e65df715fbeed7d",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "image_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/image_test.pdf",
+      "candidate_path": "production/image_test.pdf",
+      "baseline_path": "production/image_test.pdf",
+      "size": 1279704,
+      "candidate_size": 1279704,
+      "baseline_size": 1279704,
+      "sha256": "fb9ceb0f4d0f89d84a84395423bad9fb048495a997a86a4f9e2a6f29ab08a3a6",
+      "pages": 2,
+      "candidate_pages": 2,
+      "baseline_pages": 2,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        },
+        {
+          "page_number": 2,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "ocg_integration_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/ocg_integration_test.pdf",
+      "candidate_path": "production/ocg_integration_test.pdf",
+      "baseline_path": "production/ocg_integration_test.pdf",
+      "size": 1763,
+      "candidate_size": 1763,
+      "baseline_size": 1763,
+      "sha256": "75fbdfd0df0386e4f6d1be55fdb0ea444d63709126b43b1490031be85f0840f4",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    },
+    {
+      "filename": "wasm_compatibility_test.pdf",
+      "status": "unchanged",
+      "production_path": "production/wasm_compatibility_test.pdf",
+      "candidate_path": "production/wasm_compatibility_test.pdf",
+      "baseline_path": "production/wasm_compatibility_test.pdf",
+      "size": 740210,
+      "candidate_size": 740210,
+      "baseline_size": 740210,
+      "sha256": "53db5485ffabe25a61fa0239688a313ecc9e5e7f2a686c62e2415a0e19dc7001",
+      "pages": 1,
+      "candidate_pages": 1,
+      "baseline_pages": 1,
+      "sha256_match": true,
+      "visual_match": true,
+      "text_match": true,
+      "pages_with_diff": 0,
+      "pages_detail": [
+        {
+          "page_number": 1,
+          "status": "unchanged",
+          "width": 595.0,
+          "height": 842.0,
+          "diff_pixels": 0,
+          "diff_percent": 0.0,
+          "diff_image": null,
+          "text_diff": null
+        }
+      ]
+    }
+  ]
+}
