@@ -1452,3 +1452,343 @@ fn test_comprehensive_showcase() {
     println!("✅ Comprehensive showcase test completed");
     println!("📄 PDF created: {}", output_path);
 }
+
+/// Helper to create a minimal PDF in bytes with custom MediaBox, UserUnit, Rotate, and Content
+fn create_custom_test_pdf(
+    media_box: (f32, f32, f32, f32),
+    user_unit: Option<f32>,
+    rotate: Option<i64>,
+    user_unit_on_parent: bool,
+    content_ops: Vec<lopdf::content::Operation>,
+) -> Vec<u8> {
+    let mut doc = Document::with_version("1.6");
+    let mut pages_dict = dictionary! {
+        "Type" => "Pages",
+        "Count" => 1,
+    };
+    if user_unit_on_parent {
+        if let Some(uu) = user_unit {
+            pages_dict.set("UserUnit", Object::Real(uu));
+        }
+    }
+    let pages_id = doc.add_object(pages_dict);
+
+    let content = Content {
+        operations: content_ops,
+    };
+    let content_stream = Stream::new(dictionary! {}, content.encode().unwrap());
+    let content_id = doc.add_object(content_stream);
+
+    let mut page_dict = dictionary! {
+        "Type" => "Page",
+        "Parent" => pages_id,
+        "MediaBox" => vec![
+            media_box.0.into(),
+            media_box.1.into(),
+            media_box.2.into(),
+            media_box.3.into(),
+        ],
+        "Contents" => content_id,
+    };
+
+    if !user_unit_on_parent {
+        if let Some(uu) = user_unit {
+            page_dict.set("UserUnit", Object::Real(uu));
+        }
+    }
+    if let Some(rot) = rotate {
+        page_dict.set("Rotate", Object::Integer(rot));
+    }
+
+    let page_id = doc.add_object(page_dict);
+
+    let pages_obj = doc
+        .get_object_mut(pages_id)
+        .and_then(Object::as_dict_mut)
+        .unwrap();
+    pages_obj.set("Kids", vec![Object::Reference(page_id)]);
+
+    let catalog_id = doc.add_object(dictionary! {
+        "Type" => "Catalog",
+        "Pages" => Object::Reference(pages_id),
+    });
+    doc.trailer.set("Root", Object::Reference(catalog_id));
+
+    let mut bytes = Vec::new();
+    doc.save_to(&mut bytes).unwrap();
+    bytes
+}
+
+#[test]
+fn test_user_unit_basic() {
+    ensure_output_dir();
+
+    // Create a 306x396 PDF with UserUnit 2.0 (physically US Letter 612x792 pt)
+    let pdf_bytes = create_custom_test_pdf(
+        (0.0, 0.0, 306.0, 396.0),
+        Some(2.0),
+        None,
+        false,
+        vec![
+            lopdf::content::Operation::new("q", vec![]),
+            lopdf::content::Operation::new("re", vec![0.into(), 0.into(), 306.into(), 396.into()]),
+            lopdf::content::Operation::new("f", vec![]),
+            lopdf::content::Operation::new("Q", vec![]),
+        ],
+    );
+
+    let mut embedder = PdfEmbedder::new();
+    let id = embedder
+        .load_pdf_from_bytes(&pdf_bytes, "user_unit_pdf")
+        .unwrap();
+
+    // Verify info reports scaled physical dimensions
+    let info = embedder.get_pdf_info(&id).unwrap();
+    assert_eq!(info.page_count, 1);
+    assert_eq!(info.page_dimensions[0], (612.0, 792.0));
+
+    // Embed into target doc
+    let mut target_doc = Document::with_version("1.6");
+    let options = EmbedOptions::default();
+    let result = embedder.embed_pdf(&mut target_doc, &id, &options).unwrap();
+
+    // Check XObject was created with scaled BBox [0, 0, 612, 792]
+    assert_eq!(result.xobject_resources.len(), 1);
+    let xobj_ref = result.xobject_resources.values().next().unwrap();
+    if let Object::Reference(xobj_id) = xobj_ref {
+        let xobj = target_doc.get_object(*xobj_id).unwrap();
+        let stream = xobj.as_stream().unwrap();
+        let bbox = stream.dict.get(b"BBox").unwrap().as_array().unwrap();
+        let to_f32 = |o: &Object| match o {
+            Object::Real(v) => *v as f32,
+            Object::Integer(v) => *v as f32,
+            _ => 0.0,
+        };
+        assert_eq!(to_f32(&bbox[0]), 0.0);
+        assert_eq!(to_f32(&bbox[1]), 0.0);
+        assert_eq!(to_f32(&bbox[2]), 612.0);
+        assert_eq!(to_f32(&bbox[3]), 792.0);
+
+        // Decompress content stream and verify "2 0 0 2 0 0 cm" is prepended
+        let decompressed = stream.decompressed_content().unwrap();
+        let content_str = String::from_utf8_lossy(&decompressed);
+        assert!(
+            content_str.starts_with("2 0 0 2 0 0 cm"),
+            "Expected content to start with UserUnit cm transform, got: {}",
+            content_str
+        );
+    } else {
+        panic!("Expected XObject reference");
+    }
+}
+
+#[test]
+fn test_user_unit_inheritance() {
+    ensure_output_dir();
+
+    // Create a PDF where UserUnit 3.0 is inherited from the parent /Pages node
+    let pdf_bytes = create_custom_test_pdf(
+        (0.0, 0.0, 100.0, 200.0),
+        Some(3.0),
+        None,
+        true, // on parent /Pages
+        vec![
+            lopdf::content::Operation::new("q", vec![]),
+            lopdf::content::Operation::new("re", vec![0.into(), 0.into(), 100.into(), 200.into()]),
+            lopdf::content::Operation::new("f", vec![]),
+            lopdf::content::Operation::new("Q", vec![]),
+        ],
+    );
+
+    let mut embedder = PdfEmbedder::new();
+    let id = embedder
+        .load_pdf_from_bytes(&pdf_bytes, "inherited_user_unit_pdf")
+        .unwrap();
+
+    // Verify info reports scaled physical dimensions (100*3, 200*3) = (300, 600)
+    let info = embedder.get_pdf_info(&id).unwrap();
+    assert_eq!(info.page_dimensions[0], (300.0, 600.0));
+
+    // Embed into target doc
+    let mut target_doc = Document::with_version("1.6");
+    let options = EmbedOptions::default();
+    let result = embedder.embed_pdf(&mut target_doc, &id, &options).unwrap();
+
+    let xobj_ref = result.xobject_resources.values().next().unwrap();
+    if let Object::Reference(xobj_id) = xobj_ref {
+        let xobj = target_doc.get_object(*xobj_id).unwrap();
+        let stream = xobj.as_stream().unwrap();
+        let bbox = stream.dict.get(b"BBox").unwrap().as_array().unwrap();
+        let to_f32 = |o: &Object| match o {
+            Object::Real(v) => *v as f32,
+            Object::Integer(v) => *v as f32,
+            _ => 0.0,
+        };
+        assert_eq!(to_f32(&bbox[2]), 300.0);
+        assert_eq!(to_f32(&bbox[3]), 600.0);
+
+        let decompressed = stream.decompressed_content().unwrap();
+        let content_str = String::from_utf8_lossy(&decompressed);
+        assert!(
+            content_str.starts_with("3 0 0 3 0 0 cm"),
+            "Expected content to start with UserUnit cm transform, got: {}",
+            content_str
+        );
+    } else {
+        panic!("Expected XObject reference");
+    }
+}
+
+#[test]
+fn test_user_unit_with_rotation() {
+    ensure_output_dir();
+
+    // Test 90° CW with UserUnit 2.0 (raw MediaBox 300x400)
+    // Physical unrotated: 600x800. After 90° CW: width = 800, height = 600.
+    let pdf_bytes_90 = create_custom_test_pdf(
+        (0.0, 0.0, 300.0, 400.0),
+        Some(2.0),
+        Some(90),
+        false,
+        vec![],
+    );
+
+    let mut embedder = PdfEmbedder::new();
+    let id_90 = embedder
+        .load_pdf_from_bytes(&pdf_bytes_90, "rot90_uu_pdf")
+        .unwrap();
+
+    let info = embedder.get_pdf_info(&id_90).unwrap();
+    assert_eq!(info.page_dimensions[0], (800.0, 600.0));
+
+    let mut target_doc = Document::with_version("1.6");
+    let result_90 = embedder
+        .embed_pdf(&mut target_doc, &id_90, &EmbedOptions::default())
+        .unwrap();
+    let xobj_ref = result_90.xobject_resources.values().next().unwrap();
+    if let Object::Reference(xobj_id) = xobj_ref {
+        let xobj = target_doc.get_object(*xobj_id).unwrap();
+        let stream = xobj.as_stream().unwrap();
+        let bbox = stream.dict.get(b"BBox").unwrap().as_array().unwrap();
+        let to_f32 = |o: &Object| match o {
+            Object::Real(v) => *v as f32,
+            Object::Integer(v) => *v as f32,
+            _ => 0.0,
+        };
+        assert_eq!(to_f32(&bbox[2]), 800.0);
+        assert_eq!(to_f32(&bbox[3]), 600.0);
+
+        let decompressed = stream.decompressed_content().unwrap();
+        let content_str = String::from_utf8_lossy(&decompressed);
+        assert!(
+            content_str.starts_with("0 -2 2 0 0 600 cm"),
+            "Expected 90 CW + UserUnit transform, got: {}",
+            content_str
+        );
+    }
+
+    // Test 180° with UserUnit 2.0 (raw MediaBox 300x400)
+    let pdf_bytes_180 = create_custom_test_pdf(
+        (0.0, 0.0, 300.0, 400.0),
+        Some(2.0),
+        Some(180),
+        false,
+        vec![],
+    );
+    let id_180 = embedder
+        .load_pdf_from_bytes(&pdf_bytes_180, "rot180_uu_pdf")
+        .unwrap();
+    let info = embedder.get_pdf_info(&id_180).unwrap();
+    assert_eq!(info.page_dimensions[0], (600.0, 800.0));
+
+    let result_180 = embedder
+        .embed_pdf(&mut target_doc, &id_180, &EmbedOptions::default())
+        .unwrap();
+    let xobj_ref = result_180.xobject_resources.values().next().unwrap();
+    if let Object::Reference(xobj_id) = xobj_ref {
+        let xobj = target_doc.get_object(*xobj_id).unwrap();
+        let stream = xobj.as_stream().unwrap();
+        let decompressed = stream.decompressed_content().unwrap();
+        let content_str = String::from_utf8_lossy(&decompressed);
+        assert!(
+            content_str.starts_with("-2 0 0 -2 600 800 cm"),
+            "Expected 180 + UserUnit transform, got: {}",
+            content_str
+        );
+    }
+
+    // Test 270° with UserUnit 2.0 (raw MediaBox 300x400)
+    let pdf_bytes_270 = create_custom_test_pdf(
+        (0.0, 0.0, 300.0, 400.0),
+        Some(2.0),
+        Some(270),
+        false,
+        vec![],
+    );
+    let id_270 = embedder
+        .load_pdf_from_bytes(&pdf_bytes_270, "rot270_uu_pdf")
+        .unwrap();
+    let info = embedder.get_pdf_info(&id_270).unwrap();
+    assert_eq!(info.page_dimensions[0], (800.0, 600.0));
+
+    let result_270 = embedder
+        .embed_pdf(&mut target_doc, &id_270, &EmbedOptions::default())
+        .unwrap();
+    let xobj_ref = result_270.xobject_resources.values().next().unwrap();
+    if let Object::Reference(xobj_id) = xobj_ref {
+        let xobj = target_doc.get_object(*xobj_id).unwrap();
+        let stream = xobj.as_stream().unwrap();
+        let decompressed = stream.decompressed_content().unwrap();
+        let content_str = String::from_utf8_lossy(&decompressed);
+        assert!(
+            content_str.starts_with("0 2 -2 0 800 0 cm"),
+            "Expected 270 + UserUnit transform, got: {}",
+            content_str
+        );
+    }
+}
+
+#[test]
+fn test_user_unit_full_page_options() {
+    ensure_output_dir();
+
+    // Create a 306x396 PDF with UserUnit 2.0 (physical 612x792 US Letter)
+    let pdf_bytes = create_custom_test_pdf(
+        (0.0, 0.0, 306.0, 396.0),
+        Some(2.0),
+        None,
+        false,
+        vec![],
+    );
+
+    let mut embedder = PdfEmbedder::new();
+    let id = embedder
+        .load_pdf_from_bytes(&pdf_bytes, "user_unit_full_page")
+        .unwrap();
+
+    let mut target_doc = Document::with_version("1.6");
+    // full_page_options(612.0, 792.0) should fit 1:1 without shrinking
+    let options = hipdf::embed_pdf::EmbedUtils::full_page_options(612.0, 792.0);
+    let result = embedder.embed_pdf(&mut target_doc, &id, &options).unwrap();
+
+    // Check that placement operations have scale 1.0 (1 0 0 1 0 0 cm)
+    let cm_op = result
+        .operations
+        .iter()
+        .find(|op| op.operator == "cm")
+        .expect("cm operator not found");
+
+    let sx = match &cm_op.operands[0] {
+        Object::Real(v) => *v as f32,
+        Object::Integer(v) => *v as f32,
+        _ => 0.0,
+    };
+    let sy = match &cm_op.operands[3] {
+        Object::Real(v) => *v as f32,
+        Object::Integer(v) => *v as f32,
+        _ => 0.0,
+    };
+
+    assert!((sx - 1.0).abs() < 1e-4, "Expected sx=1.0, got {}", sx);
+    assert!((sy - 1.0).abs() < 1e-4, "Expected sy=1.0, got {}", sy);
+}

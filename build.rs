@@ -9,4 +9,5 @@ fn main() {
 
     // This ensures that the build script is re-run when the target changes
     println!("cargo:rerun-if-env-changed=TARGET");
+    println!("cargo:rerun-if-changed=build.rs");
 }
