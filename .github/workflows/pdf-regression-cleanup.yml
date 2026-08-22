@@ -15,38 +15,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout gh-pages Branch
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: gh-pages-repo
-        continue-on-error: true
-
-      - name: Delete PR Preview Folder
-        id: remove-preview
+        id: cleanup-branch
         run: |
-          if [ ! -d "gh-pages-repo" ]; then
-            echo "gh-pages branch not found, nothing to clean."
-            exit 0
-          fi
-
+          mkdir -p gh-pages-repo
           cd gh-pages-repo
-          PR_DIR="pr-preview/pr-${{ github.event.pull_request.number }}"
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
 
-          if [ -d "$PR_DIR" ]; then
-            echo "Removing $PR_DIR..."
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git rm -rf "$PR_DIR"
-            git commit -m "Clean up preview for closed PR #${{ github.event.pull_request.number }} [skip ci]"
-            git push origin gh-pages
-            echo "deleted=true" >> "$GITHUB_OUTPUT"
+          if git fetch origin gh-pages --depth=1 2>/dev/null; then
+            git checkout -B gh-pages origin/gh-pages
+            PR_DIR="pr-preview/pr-${{ github.event.pull_request.number }}"
+
+            if [ -d "$PR_DIR" ]; then
+              echo "Removing $PR_DIR..."
+              git rm -rf "$PR_DIR"
+              git commit -m "Clean up preview for closed PR #${{ github.event.pull_request.number }} [skip ci]"
+              git push origin gh-pages
+              echo "deleted=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "No preview folder found at $PR_DIR."
+              echo "deleted=false" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "No preview folder found at $PR_DIR."
+            echo "No gh-pages branch found on remote."
             echo "deleted=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Update PR Comment on Close
-        if: steps.remove-preview.outputs.deleted == 'true'
+        if: steps.cleanup-branch.outputs.deleted == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

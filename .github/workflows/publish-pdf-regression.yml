@@ -24,38 +24,33 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout gh-pages Branch
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: gh-pages-repo
-        continue-on-error: true
-
-      - name: Initialize gh-pages Branch if missing
+      - name: Checkout or Initialize gh-pages Branch
+        id: setup-branch
         run: |
-          if [ ! -d "gh-pages-repo" ] || [ ! -f "gh-pages-repo/.git/config" ]; then
-            mkdir -p gh-pages-repo
-            cd gh-pages-repo
-            git init
-            git checkout -b gh-pages
-            git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-            echo "# hipdf Static Pages" > README.md
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add README.md
-            git commit -m "Initialize gh-pages branch"
-            git push -u origin gh-pages || true
-            cd ..
+          mkdir -p gh-pages-repo
+          cd gh-pages-repo
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+          if git fetch origin gh-pages --depth=1 2>/dev/null; then
+            echo "Remote gh-pages branch found. Checking out..."
+            git checkout -B gh-pages origin/gh-pages
+          else
+            echo "No remote gh-pages branch found. Creating orphan gh-pages branch..."
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
           fi
 
       - name: Deploy PR Preview or Production Showcase
         id: deploy
         run: |
-          EVENT_TYPE=$(cat downloaded-report/event_type.txt || echo "push")
+          EVENT_TYPE=$(cat downloaded-report/event_type.txt 2>/dev/null || echo "push")
           cd gh-pages-repo
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Ensure on gh-pages branch
+          git checkout -B gh-pages
 
           if [ "$EVENT_TYPE" = "pull_request" ]; then
             PR_NUMBER=$(cat ../downloaded-report/pr_number.txt)
@@ -75,7 +70,7 @@ jobs:
             echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           else
             echo "Deploying Production Outputs to root..."
-            # Preserve pr-preview folder if it exists
+            # Preserve pr-preview directory if it exists
             if [ -d "pr-preview" ]; then
               mkdir -p /tmp/saved-previews
               cp -r pr-preview/* /tmp/saved-previews/ 2>/dev/null || true
