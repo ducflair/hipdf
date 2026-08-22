@@ -1,0 +1,72 @@
+name: Clean up PDF Regression PR Preview
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  cleanup:
+    name: Remove PR Preview from GitHub Pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gh-pages Branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-repo
+        continue-on-error: true
+
+      - name: Delete PR Preview Folder
+        id: remove-preview
+        run: |
+          if [ ! -d "gh-pages-repo" ]; then
+            echo "gh-pages branch not found, nothing to clean."
+            exit 0
+          fi
+
+          cd gh-pages-repo
+          PR_DIR="pr-preview/pr-${{ github.event.pull_request.number }}"
+
+          if [ -d "$PR_DIR" ]; then
+            echo "Removing $PR_DIR..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "$PR_DIR"
+            git commit -m "Clean up preview for closed PR #${{ github.event.pull_request.number }} [skip ci]"
+            git push origin gh-pages
+            echo "deleted=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No preview folder found at $PR_DIR."
+            echo "deleted=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update PR Comment on Close
+        if: steps.remove-preview.outputs.deleted == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const marker = '<!-- hipdf-pdf-regression-comment -->';
+            const prNumber = context.issue.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existingComment = comments.find(c => c.body && c.body.includes(marker));
+            if (existingComment) {
+              const updatedBody = `${existingComment.body}\n\n---\n*🧹 PR preview testing artifacts removed from GitHub Pages.*`;
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: updatedBody,
+              });
+            }
