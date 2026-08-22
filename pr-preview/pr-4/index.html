@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>hipdf</title>
+  <link rel="stylesheet" href="report.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <span class="brand-title">hipdf</span>
+      <span class="header-tag" id="headerTag" style="display: none;"></span>
+    </div>
+    <div class="header-summary" id="headerSummary"></div>
+  </header>
+
+  <!-- Container -->
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-search">
+        <input type="text" id="searchInput" placeholder="Search PDFs..." />
+      </div>
+      <div class="filter-tabs" id="filterTabs">
+        <button class="filter-tab active" data-filter="all">All (<span id="countAll">0</span>)</button>
+        <button class="filter-tab" data-filter="changed">Changed (<span id="countChanged">0</span>)</button>
+        <button class="filter-tab" data-filter="unchanged">Unchanged (<span id="countUnchanged">0</span>)</button>
+      </div>
+      <ul class="file-list" id="fileList"></ul>
+    </aside>
+
+    <!-- Main View -->
+    <main class="main-content">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-info">
+          <span class="status-indicator" id="fileStatusBadge">✓</span>
+          <span class="file-title" id="currentFileName">Select a PDF</span>
+          <span class="file-meta-text" id="currentFileMeta"></span>
+        </div>
+
+        <!-- Mode tabs for comparison mode -->
+        <div class="mode-tabs" id="modeTabs">
+          <button class="mode-tab active" data-mode="side-by-side">Side-by-Side</button>
+          <button class="mode-tab" data-mode="diff">Visual Diff</button>
+          <button class="mode-tab" data-mode="details">Details</button>
+        </div>
+
+        <!-- Navigation & Actions -->
+        <div class="toolbar-actions">
+          <!-- Page pagination (only in comparison mode) -->
+          <div class="page-nav" id="pageNavGroup">
+            <button id="prevPageBtn" class="btn">◀ Prev</button>
+            <span class="page-label">Page <span id="pageCurrent">1</span> of <span id="pageTotal">1</span></span>
+            <button id="nextPageBtn" class="btn">Next ▶</button>
+            <span class="sep">|</span>
+          </div>
+
+          <!-- Zoom -->
+          <button id="zoomOutBtn" class="btn">−</button>
+          <span id="zoomLabel" class="zoom-label">100%</span>
+          <button id="zoomInBtn" class="btn">+</button>
+          <span class="sep">|</span>
+
+          <!-- Downloads -->
+          <a id="downloadBaseBtn" href="#" download class="btn">Download Base</a>
+          <a id="downloadCandBtn" href="#" download class="btn btn-primary">Download PDF</a>
+        </div>
+      </div>
+
+      <!-- Viewports -->
+      <div class="viewport-area">
+        <!-- Production Mode: Full width continuous vertical scroll viewer -->
+        <div class="showcase-scroll-container" id="showcaseViewport" style="display: none;">
+          <div class="showcase-pages" id="showcasePages"></div>
+        </div>
+
+        <!-- Comparison Mode: Side by Side -->
+        <div class="comparison-grid" id="comparisonViewport">
+          <div class="pane">
+            <div class="pane-header">Baseline (<span id="baseLabel">main</span>)</div>
+            <div class="pane-body" id="baseScroll">
+              <div class="canvas-wrapper">
+                <canvas id="baseCanvas"></canvas>
+                <div class="empty-notice" id="baseEmpty">No Baseline</div>
+              </div>
+            </div>
+          </div>
+          <div class="pane">
+            <div class="pane-header">Candidate (<span id="candLabel">PR</span>)</div>
+            <div class="pane-body" id="candScroll">
+              <div class="canvas-wrapper">
+                <canvas id="candCanvas"></canvas>
+                <div class="empty-notice" id="candEmpty">No Candidate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Diff View -->
+        <div class="diff-viewport" id="diffViewport" style="display: none;">
+          <div class="diff-inner">
+            <img id="diffImage" src="" alt="Visual Diff" />
+            <div id="diffNoneNotice" class="empty-notice">✅ No visual differences on this page.</div>
+          </div>
+        </div>
+
+        <!-- Details View -->
+        <div class="details-viewport" id="detailsViewport" style="display: none;">
+          <div class="details-card">
+            <h3>Document Information</h3>
+            <table class="data-table" id="detailsTable"></table>
+
+            <h3 style="margin-top: 20px;">Page Summary</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Page</th>
+                  <th>Status</th>
+                  <th>Dimensions</th>
+                  <th>Differing Pixels</th>
+                  <th>Diff %</th>
+                </tr>
+              </thead>
+              <tbody id="pagesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="report.js"></script>
+</body>
+</html>
