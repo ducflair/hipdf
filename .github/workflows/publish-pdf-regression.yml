@@ -1,0 +1,144 @@
+name: Publish PDF Regression Report
+
+on:
+  workflow_run:
+    workflows: ["PDF Regression"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  publish:
+    name: Publish Report to GitHub Pages
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Download Regression Report Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pdf-regression-report
+          path: downloaded-report
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout or Initialize gh-pages Branch
+        id: setup-branch
+        run: |
+          mkdir -p gh-pages-repo
+          cd gh-pages-repo
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+          if git fetch origin gh-pages --depth=1 2>/dev/null; then
+            echo "Remote gh-pages branch found. Checking out..."
+            git checkout -B gh-pages origin/gh-pages
+          else
+            echo "No remote gh-pages branch found. Creating orphan gh-pages branch..."
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
+          fi
+
+      - name: Deploy PR Preview or Production Showcase
+        id: deploy
+        run: |
+          EVENT_TYPE=$(cat downloaded-report/event_type.txt 2>/dev/null || echo "push")
+          cd gh-pages-repo
+
+          # Ensure on gh-pages branch
+          git checkout -B gh-pages
+
+          if [ "$EVENT_TYPE" = "pull_request" ]; then
+            PR_NUMBER=$(cat ../downloaded-report/pr_number.txt)
+            echo "Deploying PR #${PR_NUMBER} preview..."
+            mkdir -p "pr-preview/pr-${PR_NUMBER}"
+            rm -rf "pr-preview/pr-${PR_NUMBER:?}"/*
+            cp -r ../downloaded-report/* "pr-preview/pr-${PR_NUMBER}/"
+
+            git add "pr-preview/pr-${PR_NUMBER}"
+            if git diff --staged --quiet; then
+              echo "No changes to commit for PR preview."
+            else
+              git commit -m "Deploy PR #${PR_NUMBER} visual regression preview [skip ci]"
+              git push origin gh-pages
+            fi
+            echo "is_pr=true" >> "$GITHUB_OUTPUT"
+            echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Deploying Production Outputs to root..."
+            # Preserve pr-preview directory if it exists
+            if [ -d "pr-preview" ]; then
+              mkdir -p /tmp/saved-previews
+              cp -r pr-preview/* /tmp/saved-previews/ 2>/dev/null || true
+            fi
+
+            # Clean root except .git
+            find . -maxdepth 1 ! -name '.git' ! -name '.' ! -name '..' -exec rm -rf {} +
+
+            # Copy production report to root
+            cp -r ../downloaded-report/* .
+
+            # Restore pr-previews
+            if [ -d "/tmp/saved-previews" ]; then
+              mkdir -p pr-preview
+              cp -r /tmp/saved-previews/* pr-preview/ 2>/dev/null || true
+            fi
+
+            git add .
+            if git diff --staged --quiet; then
+              echo "No changes in production outputs."
+            else
+              git commit -m "Deploy production PDF showcase [skip ci]"
+              git push origin gh-pages
+            fi
+            echo "is_pr=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update or Create PR Comment
+        if: steps.deploy.outputs.is_pr == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const prNumber = parseInt('${{ steps.deploy.outputs.pr_number }}', 10);
+            if (!prNumber) return;
+
+            let summaryMd = '';
+            try {
+              summaryMd = fs.readFileSync('downloaded-report/summary.md', 'utf8');
+            } catch (e) {
+              summaryMd = 'PDF Regression report generated successfully.';
+            }
+
+            const marker = '<!-- hipdf-pdf-regression-comment -->';
+            const body = `${summaryMd}\n\n${marker}`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existingComment = comments.find(c => c.body && c.body.includes(marker));
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body,
+              });
+              console.log(`Updated comment ${existingComment.id} on PR #${prNumber}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: body,
+              });
+              console.log(`Created new comment on PR #${prNumber}`);
+            }

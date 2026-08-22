@@ -38,3 +38,12 @@ Thumbs.db
 
 dist/
 node_modules/
+
+# Test generated outputs
+tests/outputs/
+
+# PDF regression & showcase generated report outputs
+report/
+report-*/
+results.json
+.pdf-regression/

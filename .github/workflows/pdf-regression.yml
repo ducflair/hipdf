@@ -1,0 +1,120 @@
+name: PDF Regression
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    name: Run PDF Visual Regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      # Case 1: Pull Request - Generate baseline and candidate PDFs and compare
+      - name: Checkout Base Branch (Baseline)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: baseline-repo
+
+      - name: Generate Baseline PDFs
+        if: github.event_name == 'pull_request'
+        working-directory: baseline-repo
+        run: |
+          cargo test
+          mkdir -p ../collected-baseline
+          if [ -d "tests/outputs" ]; then
+            cp -r tests/outputs/* ../collected-baseline/ || true
+          fi
+
+      - name: Checkout PR Head (Candidate)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate-repo
+
+      - name: Generate Candidate PDFs
+        if: github.event_name == 'pull_request'
+        working-directory: candidate-repo
+        run: |
+          cargo test
+          mkdir -p ../collected-candidate
+          if [ -d "tests/outputs" ]; then
+            cp -r tests/outputs/* ../collected-candidate/ || true
+          fi
+
+      - name: Compare PDFs & Build Report
+        if: github.event_name == 'pull_request'
+        working-directory: candidate-repo
+        run: |
+          mkdir -p ../report
+          uv run tools/pdf-regression-report/compare.py \
+            --baseline-dir ../collected-baseline \
+            --candidate-dir ../collected-candidate \
+            --output-dir ../report \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --pr-title "${{ github.event.pull_request.title }}" \
+            --base-sha "${{ github.event.pull_request.base.sha }}" \
+            --head-sha "${{ github.event.pull_request.head.sha }}" \
+            --base-ref "${{ github.event.pull_request.base.ref }}" \
+            --head-ref "${{ github.event.pull_request.head.ref }}" \
+            --preview-url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.pull_request.number }}/" \
+            --summary-markdown ../report/summary.md \
+            --summary-json ../report/summary.json
+
+          echo "pull_request" > ../report/event_type.txt
+          echo "${{ github.event.pull_request.number }}" > ../report/pr_number.txt
+          echo "${{ github.event.pull_request.head.sha }}" > ../report/pr_head_sha.txt
+
+      # Case 2: Push to Main - Generate Production Outputs
+      - name: Checkout Main Branch
+        if: github.event_name == 'push'
+        uses: actions/checkout@v4
+        with:
+          path: production-repo
+
+      - name: Generate Production PDFs
+        if: github.event_name == 'push'
+        working-directory: production-repo
+        run: |
+          cargo test
+          mkdir -p ../report
+          uv run tools/pdf-regression-report/compare.py \
+            --production-dir tests/outputs \
+            --output-dir ../report \
+            --base-sha "${{ github.sha }}" \
+            --preview-url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" \
+            --summary-markdown ../report/summary.md \
+            --summary-json ../report/summary.json
+
+          echo "push" > ../report/event_type.txt
+          echo "${{ github.sha }}" > ../report/commit_sha.txt
+
+      - name: Upload PDF Regression Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-regression-report
+          path: report/
+          retention-days: 7
