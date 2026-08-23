@@ -20,6 +20,7 @@ name = "hipdf"
 path = "src/lib.rs"
 
 [dependencies]
+encoding_rs = "0.8.35"
 image = { version = "0.25", default-features = false, features = ["webp"] }
 jpeg-decoder = "0.3.2"
 miniz_oxide = "0.8.9"

@@ -4,6 +4,7 @@
 //! allowing you to organize content into groups that can be toggled on/off
 //! in PDF viewers.
 
+use encoding_rs::mem::encode_latin1_lossy;
 use lopdf::{content::Operation, dictionary, Dictionary, Document, Object, ObjectId};
 use std::collections::HashMap;
 
@@ -150,7 +151,7 @@ impl OCGManager {
         for layer in &mut self.layers {
             let ocg_dict = dictionary! {
                 "Type" => "OCG",
-                "Name" => Object::string_literal(layer.name.as_bytes().to_vec()),
+                "Name" => Object::string_literal(encode_latin1_lossy(&layer.name)),
             };
             layer.id = doc.add_object(ocg_dict);
         }
